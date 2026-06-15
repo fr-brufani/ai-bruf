@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.playwright/
+*.egg-info/
+token.json
+google_credentials.json
