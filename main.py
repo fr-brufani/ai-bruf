@@ -206,6 +206,36 @@ async def cmd_dev(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Errore /dev: {e}")
 
 
+async def cmd_deploy(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Manda in produzione le modifiche fatte via /dev (build su Fly, poi live)."""
+    if not is_authorized(update.effective_user.id):
+        return
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        await update.message.reply_text("❌ BRIDGE_URL non configurato.")
+        return
+
+    await update.message.reply_text("🚀 Deploy in corso (build su Fly, ~2-4 min)...")
+    await update.effective_chat.send_action("typing")
+
+    def _call():
+        import requests
+        resp = requests.post(
+            f"{bridge_url}/deploy",
+            json={"secret": bridge_secret},
+            timeout=300,
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "(nessuna risposta)")
+
+    try:
+        result = await asyncio.to_thread(_call)
+        await _reply(update, result)
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore /deploy: {e}")
+
+
 # ── Message handler ───────────────────────────────────────────────────────────
 
 async def _reply(update: Update, text: str):
@@ -362,6 +392,7 @@ def main():
     app.add_handler(CommandHandler("test_briefing", cmd_test_briefing))
     app.add_handler(CommandHandler("test_revolut", cmd_test_revolut))
     app.add_handler(CommandHandler("dev", cmd_dev))
+    app.add_handler(CommandHandler("deploy", cmd_deploy))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
