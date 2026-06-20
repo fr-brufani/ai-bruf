@@ -41,14 +41,63 @@ def browser_fill_application(
     how_did_you_hear: str = "LinkedIn - post or content",
     extra_fields: str = "",
 ) -> str:
-    """Compila automaticamente un form di job application e restituisce uno screenshot.
+    """Compila automaticamente un form di job application tramite Browser Use su Browserbase
+    (browser cloud, AI-driven: riconosce i campi da solo su qualsiasi ATS). Carica il CV,
+    compila tutti i campi, e si FERMA prima dell'invio restituendo un link di revisione.
 
     Args:
-        url: URL del form di application (Ashby, Greenhouse, Lever, ecc.)
+        url: URL del form di application (Ashby, Greenhouse, Lever, Workday, ecc.)
         cv_type: Tipo di CV da allegare: 'sales' o 'product' (default: sales)
-        how_did_you_hear: Come hai trovato il lavoro (per i radio button)
-        extra_fields: Eventuali campi aggiuntivi in formato 'campo1=valore1,campo2=valore2'
+        how_did_you_hear: Come hai trovato il lavoro
+        extra_fields: Istruzioni aggiuntive in linguaggio naturale per campi specifici
     """
+    import os, requests
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        return "Errore: BRIDGE_URL non configurato."
+    extra = []
+    if how_did_you_hear:
+        extra.append(f"Per 'How did you hear about us' usa: {how_did_you_hear}.")
+    if extra_fields:
+        extra.append(extra_fields)
+    try:
+        resp = requests.post(
+            f"{bridge_url}/apply",
+            json={"url": url, "cv_type": cv_type, "extra": " ".join(extra), "secret": bridge_secret},
+            timeout=620,
+        )
+        resp.raise_for_status()
+        result = resp.json().get("response", "(nessuna risposta)")
+    except requests.exceptions.Timeout:
+        return "Timeout: la compilazione del form ha superato il tempo massimo."
+    except Exception as e:
+        return f"Errore bridge /apply: {e}"
+
+    # Salva nel DB
+    try:
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc.replace("www.", "").split(".")[0]
+        from agent.database import job_application_save
+        job_application_save(company=domain.capitalize(), role_title="", url=url,
+                             cv_type=cv_type, notes=result[:500])
+    except Exception:
+        pass
+
+    return (
+        f"📝 Form compilato (Browser Use su cloud) per: {url}\n"
+        f"CV: {cv_type}\n\n{result}\n\n"
+        f"⚠️ Rivedi il form col link sopra, poi premi INVIA tu (il bot non invia mai da solo)."
+    )
+
+
+def _browser_fill_application_OLD_LOCAL(
+    url: str,
+    cv_type: str = "sales",
+    how_did_you_hear: str = "LinkedIn - post or content",
+    extra_fields: str = "",
+) -> str:
+    """[DEPRECATO] Vecchia versione con Playwright locale. Mantenuta come riferimento."""
     from playwright.sync_api import sync_playwright
 
     profile = {
