@@ -306,6 +306,7 @@ def main():
     app = (
         ApplicationBuilder()
         .token(TELEGRAM_TOKEN)
+        .concurrent_updates(True)
         .build()
     )
 

@@ -4,38 +4,36 @@ from agent.memory import read_memory as _read_memory, write_to_memory
 
 # ── Tool implementations ───────────────────────────────────────────────────────
 
-def search_web(query: str) -> str:
+def _bridge_post(endpoint: str, payload: dict, timeout: int) -> str:
+    """Chiama un endpoint del bridge sulla VM (search/fetch/browse). Con timeout reale:
+    se la VM non risponde, restituisce un errore invece di bloccare il bot."""
+    import os, requests
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        return "Errore: BRIDGE_URL non configurato."
     try:
-        from ddgs import DDGS
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=6))
-        if not results:
-            return "Nessun risultato trovato."
-        parts = []
-        for r in results:
-            parts.append(f"**{r.get('title', '')}**\n{r.get('body', '')}\nURL: {r.get('href', '')}")
-        return "\n\n".join(parts)
+        resp = requests.post(
+            f"{bridge_url}{endpoint}",
+            json={**payload, "secret": bridge_secret},
+            timeout=timeout,
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "(nessuna risposta)")
+    except requests.exceptions.Timeout:
+        return f"Timeout: l'operazione web ha superato {timeout}s."
     except Exception as e:
-        return f"Errore nella ricerca: {e}"
+        return f"Errore bridge: {e}"
+
+
+def search_web(query: str) -> str:
+    """Cerca sul web (DuckDuckGo) tramite la VM. Timeout protetto."""
+    return _bridge_post("/search", {"query": query}, timeout=45)
 
 
 def browse_url(url: str) -> str:
-    try:
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            ctx = browser.new_context(
-                user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-            )
-            page = ctx.new_page()
-            page.goto(url, timeout=30000, wait_until="domcontentloaded")
-            content = page.inner_text("body")
-            browser.close()
-        if len(content) > 8000:
-            content = content[:8000] + "\n… [contenuto troncato]"
-        return content
-    except Exception as e:
-        return f"Errore nel browser: {e}"
+    """Apre un URL e restituisce il testo della pagina, tramite la VM. Timeout protetto."""
+    return _bridge_post("/fetch", {"url": url}, timeout=55)
 
 
 def write_memory(content: str) -> str:
@@ -406,23 +404,7 @@ def web_task(task: str) -> str:
     Args:
         task: Descrizione completa del task (es. "vai su esselunga.it e aggiungi al carrello: 500g petto di pollo, 1L latte")
     """
-    import os, requests
-    bridge_url = os.environ.get("BRIDGE_URL", "")
-    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
-    if not bridge_url:
-        return "Errore: BRIDGE_URL non configurato."
-    try:
-        resp = requests.post(
-            f"{bridge_url}/browse",
-            json={"task": task, "secret": bridge_secret},
-            timeout=300,
-        )
-        resp.raise_for_status()
-        return resp.json().get("response", "Task completato senza risposta.")
-    except requests.exceptions.Timeout:
-        return "Timeout: il task web ha richiesto troppo tempo (>5 min)."
-    except Exception as e:
-        return f"Errore bridge: {e}"
+    return _bridge_post("/browse", {"task": task}, timeout=290)
 
 
 # ── Database tools ────────────────────────────────────────────────────────────
