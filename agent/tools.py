@@ -227,6 +227,18 @@ def browser_fill_application(
     return _fn(url, cv_type, how_did_you_hear, extra_fields)
 
 
+def submit_application(session_id: str) -> str:
+    """Invia una candidatura già compilata, dopo conferma di Francesco."""
+    from agent.browser import submit_application as _fn
+    return _fn(session_id)
+
+
+def modify_application(session_id: str, change: str) -> str:
+    """Modifica un campo di una candidatura compilata prima dell'invio."""
+    from agent.browser import modify_application as _fn
+    return _fn(session_id, change)
+
+
 def browser_screenshot(url: str) -> str:
     """Scatta uno screenshot di una pagina web.
 
@@ -586,6 +598,29 @@ TOOL_SCHEMAS = [
                 "extra_fields": {"type": "string", "description": "Campi aggiuntivi: 'campo=valore,campo2=valore2' (opzionale)"},
             },
             "required": ["url"],
+        },
+    },
+    {
+        "name": "submit_application",
+        "description": "Invia (submit) una candidatura GIÀ compilata da browser_fill_application. Usare SOLO dopo che Francesco ha confermato esplicitamente l'invio. Passa il session_id ricevuto da browser_fill_application.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string", "description": "session_id restituito da browser_fill_application"}
+            },
+            "required": ["session_id"],
+        },
+    },
+    {
+        "name": "modify_application",
+        "description": "Modifica un campo di una candidatura già compilata, PRIMA dell'invio, quando Francesco chiede una correzione. Passa il session_id e cosa cambiare.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string", "description": "session_id della candidatura compilata"},
+                "change": {"type": "string", "description": "Modifica richiesta (es. 'metti RAL 50000')"},
+            },
+            "required": ["session_id", "change"],
         },
     },
     {
@@ -985,6 +1020,8 @@ TOOL_MAP = {
     "calendar_mark_not_done": calendar_mark_not_done,
     "calendar_reschedule_event": calendar_reschedule_event,
     "browser_fill_application": browser_fill_application,
+    "submit_application": submit_application,
+    "modify_application": modify_application,
     "browser_screenshot": browser_screenshot,
     "db_job_applications_list": db_job_applications_list,
     "db_job_application_update": db_job_application_update,

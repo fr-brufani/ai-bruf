@@ -68,7 +68,9 @@ def browser_fill_application(
             timeout=620,
         )
         resp.raise_for_status()
-        result = resp.json().get("response", "(nessuna risposta)")
+        data = resp.json()
+        result = data.get("response", "(nessuna risposta)")
+        session_id = data.get("session_id", "")
     except requests.exceptions.Timeout:
         return "Timeout: la compilazione del form ha superato il tempo massimo."
     except Exception as e:
@@ -85,10 +87,64 @@ def browser_fill_application(
         pass
 
     return (
-        f"📝 Form compilato (Browser Use su cloud) per: {url}\n"
-        f"CV: {cv_type}\n\n{result}\n\n"
-        f"⚠️ Rivedi il form col link sopra, poi premi INVIA tu (il bot non invia mai da solo)."
+        f"📝 Form compilato per: {url} (CV: {cv_type})\n\n{result}\n\n"
+        f"ISTRUZIONI PER L'AGENTE: mostra a Francesco il riepilogo dei campi compilati qui sopra "
+        f"e CHIEDI se confermare l'invio o modificare qualcosa. "
+        f"Se conferma → chiama submit_application(session_id='{session_id}'). "
+        f"Se chiede una modifica → chiama modify_application(session_id='{session_id}', change='...'). "
+        f"NON inviare senza conferma esplicita di Francesco."
     )
+
+
+def submit_application(session_id: str) -> str:
+    """Invia (submit) una candidatura già compilata, DOPO conferma esplicita di Francesco.
+    Usa il session_id restituito da browser_fill_application.
+
+    Args:
+        session_id: ID della sessione del form compilato
+    """
+    import os, requests
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        return "Errore: BRIDGE_URL non configurato."
+    try:
+        resp = requests.post(
+            f"{bridge_url}/apply_submit",
+            json={"session_id": session_id, "secret": bridge_secret},
+            timeout=320,
+        )
+        resp.raise_for_status()
+        return "📨 " + resp.json().get("response", "(nessuna risposta)")
+    except Exception as e:
+        return f"Errore invio candidatura: {e}"
+
+
+def modify_application(session_id: str, change: str) -> str:
+    """Modifica un campo di una candidatura già compilata (prima dell'invio), su richiesta di Francesco.
+
+    Args:
+        session_id: ID della sessione del form compilato
+        change: Cosa modificare (es. "cambia il campo RAL in 50000")
+    """
+    import os, requests
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        return "Errore: BRIDGE_URL non configurato."
+    try:
+        resp = requests.post(
+            f"{bridge_url}/apply_modify",
+            json={"session_id": session_id, "change": change, "secret": bridge_secret},
+            timeout=420,
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "(nessuna risposta)") + (
+            "\n\nISTRUZIONI: mostra il riepilogo aggiornato e chiedi di nuovo conferma per l'invio "
+            "(submit_application) o altre modifiche."
+        )
+    except Exception as e:
+        return f"Errore modifica candidatura: {e}"
 
 
 def _browser_fill_application_OLD_LOCAL(
