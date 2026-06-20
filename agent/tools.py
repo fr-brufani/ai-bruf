@@ -816,7 +816,7 @@ TOOL_SCHEMAS = [
     # Web automation
     {
         "name": "web_task",
-        "description": "Esegui un task web complesso tramite browser AI-controllato (Browser Use su server GCP). Usa per: fare la spesa online (Esselunga, Amazon Fresh, ecc.), prenotare servizi su siti dinamici, estrarre dati da pagine con login. Il browser agisce autonomamente seguendo le tue istruzioni in linguaggio naturale.",
+        "description": "Esegui un task web complesso tramite browser AI-controllato su cloud (Browser Use + Browserbase). Usa per: fare la spesa online (Esselunga: le credenziali sono già caricate, fai login e se chiede la verifica 2FA clicca 'Attiva in seguito'), prenotare servizi su siti dinamici, estrarre dati da pagine con login. Il browser agisce autonomamente. REGOLA DI SICUREZZA ASSOLUTA: per acquisti/spesa, RIEMPI il carrello e FERMATI prima del pagamento. Includi SEMPRE nell'istruzione 'aggiungi al carrello e fermati prima del pagamento, riporta il totale'. NON completare MAI ordini o pagamenti.",
         "input_schema": {
             "type": "object",
             "properties": {
