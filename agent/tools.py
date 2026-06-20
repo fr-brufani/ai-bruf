@@ -404,7 +404,7 @@ def web_task(task: str) -> str:
     Args:
         task: Descrizione completa del task (es. "vai su esselunga.it e aggiungi al carrello: 500g petto di pollo, 1L latte")
     """
-    return _bridge_post("/browse", {"task": task}, timeout=290)
+    return _bridge_post("/browse", {"task": task}, timeout=880)
 
 
 # ── Auto-sviluppo del bot (Claude Code sulla VM) ──────────────────────────────
