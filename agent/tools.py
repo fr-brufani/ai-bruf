@@ -397,6 +397,34 @@ def diet_update_base(content: str) -> str:
     return diet_save_base(content)
 
 
+# ── Web automation (Browser Use via GCP bridge) ───────────────────────────────
+
+def web_task(task: str) -> str:
+    """Esegue un task web complesso tramite Browser Use (browser AI-controllato sul server GCP).
+    Usa per: fare la spesa online, compilare form, interagire con siti web dinamici.
+
+    Args:
+        task: Descrizione completa del task (es. "vai su esselunga.it e aggiungi al carrello: 500g petto di pollo, 1L latte")
+    """
+    import os, requests
+    bridge_url = os.environ.get("BRIDGE_URL", "")
+    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
+    if not bridge_url:
+        return "Errore: BRIDGE_URL non configurato."
+    try:
+        resp = requests.post(
+            f"{bridge_url}/browse",
+            json={"task": task, "secret": bridge_secret},
+            timeout=300,
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "Task completato senza risposta.")
+    except requests.exceptions.Timeout:
+        return "Timeout: il task web ha richiesto troppo tempo (>5 min)."
+    except Exception as e:
+        return f"Errore bridge: {e}"
+
+
 # ── Database tools ────────────────────────────────────────────────────────────
 
 def db_job_applications_list() -> str:
@@ -780,6 +808,21 @@ TOOL_SCHEMAS = [
             "required": ["contact_id"],
         },
     },
+    # Web automation
+    {
+        "name": "web_task",
+        "description": "Esegui un task web complesso tramite browser AI-controllato (Browser Use su server GCP). Usa per: fare la spesa online (Esselunga, Amazon Fresh, ecc.), prenotare servizi su siti dinamici, estrarre dati da pagine con login. Il browser agisce autonomamente seguendo le tue istruzioni in linguaggio naturale.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task": {
+                    "type": "string",
+                    "description": "Descrizione completa del task in italiano (es. 'vai su esselunga.it, cerca petto di pollo e aggiungine 500g al carrello, poi cerca latte intero 1L e aggiungilo')",
+                }
+            },
+            "required": ["task"],
+        },
+    },
     # Diet tools
     {
         "name": "diet_save_shopping",
@@ -927,6 +970,8 @@ TOOL_MAP = {
     "call_make": call_make,
     "call_check_status": call_check_status,
     "call_list_recent": call_list_recent,
+    # Web automation
+    "web_task": web_task,
     # Diet
     "diet_save_shopping": diet_save_shopping,
     "diet_get_shopping": diet_get_shopping,

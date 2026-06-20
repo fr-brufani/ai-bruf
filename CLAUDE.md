@@ -23,6 +23,7 @@ Questo agente HA le seguenti capacità che i normali AI non hanno:
 |---|---|
 | Email, Gmail, posta, inbox, risposta | email |
 | Cerca, ricerca, notizie, informazioni online | research |
+| Spesa online, ordine, carrello, acquisto su sito | web_task (usa web_task direttamente) |
 | Calendario, evento, appuntamento, task, reminder, palestra, allenamento, cosa da fare | calendar |
 | File, documento, testo, cartella, scrivi, leggi | files |
 | Application, form, candidatura, compila, job, posizione | applications |
@@ -39,6 +40,7 @@ Questo agente HA le seguenti capacità che i normali AI non hanno:
 - **browse_url(url)** — apre e legge il testo di una pagina web
 - **browser_screenshot(url)** — scatta screenshot di una pagina web
 - **browser_fill_application(url, cv_type, how_did_you_hear, extra_fields)** — compila form job application
+- **web_task(task)** — browser AI-controllato su server GCP (Browser Use): spesa online, form complessi, siti dinamici
 - **read_file(path)** / **write_file(path, content)** / **list_directory(path)** — file locali
 
 ### Memoria

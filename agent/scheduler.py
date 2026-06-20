@@ -629,18 +629,9 @@ def setup_scheduler(app: Application) -> None:
         name="daily_audit",
     )
 
-    # 07:00 — Batch: genera tutte le proposte pasto del giorno in una sola chiamata Claude
-    jq.run_daily(callback=send_meal_daily_prep, time=time(7, 0, tzinfo=ROME_TZ), name="meal_daily_prep")
-
-    # Invio proposte pasto (leggono dalla cache generata alle 07:00)
-    jq.run_daily(callback=send_meal_colazione, time=time(7, 30, tzinfo=ROME_TZ), name="meal_colazione")
-    jq.run_daily(callback=send_meal_pranzo,    time=time(12, 30, tzinfo=ROME_TZ), name="meal_pranzo")
-    jq.run_daily(callback=send_meal_merenda,   time=time(16,  0, tzinfo=ROME_TZ), name="meal_merenda")
-    jq.run_daily(callback=send_meal_cena,      time=time(19, 30, tzinfo=ROME_TZ), name="meal_cena")
 
     logger.info(
         "Scheduler attivo: briefing 08:00 | email recap 12:30 | "
         "reminder eventi ogni minuto | planning 22:00 | recap 22:30 | "
-        "audit 23:55 | revolut 1° mese 13:00 | dieta dom 12:00 | "
-        "pasti batch 07:00 → invio 07:30/12:30/16:00/19:30 (Europe/Rome)"
+        "audit 23:55 | revolut 1° mese 13:00 | dieta dom 12:00 (Europe/Rome)"
     )
