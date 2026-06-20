@@ -407,6 +407,29 @@ def web_task(task: str) -> str:
     return _bridge_post("/browse", {"task": task}, timeout=290)
 
 
+# ── Auto-sviluppo del bot (Claude Code sulla VM) ──────────────────────────────
+
+def bot_self_modify(instruction: str) -> str:
+    """Modifica il codice di QUESTO bot. Usa quando Francesco chiede di aggiungere/cambiare
+    una funzionalità del bot stesso (nuovi comandi, nuovi tool, fix di bug, cambi di
+    comportamento). Claude Code lavora sul repo del bot sulla VM e applica la modifica.
+    DOPO una modifica al codice, chiama SEMPRE bot_deploy() per pubblicarla in produzione.
+
+    Args:
+        instruction: Istruzione chiara e completa di cosa modificare/aggiungere nel bot
+                     (es. "aggiungi un comando /meteo che mostra il meteo di Perugia usando search_web")
+    """
+    return _bridge_post("/dev", {"message": instruction}, timeout=290)
+
+
+def bot_deploy() -> str:
+    """Pubblica in produzione le modifiche al codice del bot (build su Fly, poi live).
+    Chiamare SEMPRE dopo bot_self_modify() quando è stato cambiato del codice, così la
+    modifica diventa attiva. Richiede ~2-4 minuti.
+    """
+    return _bridge_post("/deploy", {}, timeout=290)
+
+
 # ── Database tools ────────────────────────────────────────────────────────────
 
 def db_job_applications_list() -> str:
@@ -805,6 +828,23 @@ TOOL_SCHEMAS = [
             "required": ["task"],
         },
     },
+    # Auto-sviluppo del bot
+    {
+        "name": "bot_self_modify",
+        "description": "Modifica il codice di QUESTO bot quando Francesco chiede di aggiungere o cambiare una funzionalità del bot stesso (nuovo comando, nuovo tool, fix bug, cambio comportamento). Claude Code applica la modifica sul repo della VM. IMPORTANTE: dopo aver modificato del codice chiama SEMPRE bot_deploy per pubblicare. Usa questo SOLO per modifiche al bot, non per task normali.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "instruction": {"type": "string", "description": "Cosa modificare/aggiungere nel bot, chiaro e completo"}
+            },
+            "required": ["instruction"],
+        },
+    },
+    {
+        "name": "bot_deploy",
+        "description": "Pubblica in produzione le modifiche al codice del bot (build su Fly, poi live). Chiamare SEMPRE dopo bot_self_modify quando è stato cambiato del codice. Richiede 2-4 minuti.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
     # Diet tools
     {
         "name": "diet_save_shopping",
@@ -954,6 +994,9 @@ TOOL_MAP = {
     "call_list_recent": call_list_recent,
     # Web automation
     "web_task": web_task,
+    # Auto-sviluppo bot
+    "bot_self_modify": bot_self_modify,
+    "bot_deploy": bot_deploy,
     # Diet
     "diet_save_shopping": diet_save_shopping,
     "diet_get_shopping": diet_get_shopping,

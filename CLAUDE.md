@@ -31,6 +31,7 @@ Questo agente HA le seguenti capacità che i normali AI non hanno:
 | Chiama, telefona, chiamata, telefonata, prenota per telefono, contatta telefonicamente | calls |
 | Dieta, spesa, mangiare, pranzo, cena, colazione, merenda, ingredienti, cosa mangio | diet |
 | Wedding, matrimonio, fotografo, catering, wedding planner, outreach, contatti wedding | wedding |
+| Modifica/aggiungi funzione al bot, nuovo comando, sviluppa, migliora il bot, cambia comportamento del bot, "fai in modo che tu..." | dev (bot_self_modify + bot_deploy) |
 | Tutto il resto | root (contesto generale) |
 
 ## Tool Disponibili
@@ -41,6 +42,11 @@ Questo agente HA le seguenti capacità che i normali AI non hanno:
 - **browser_screenshot(url)** — scatta screenshot di una pagina web
 - **browser_fill_application(url, cv_type, how_did_you_hear, extra_fields)** — compila form job application
 - **web_task(task)** — browser AI-controllato su server GCP (Browser Use): spesa online, form complessi, siti dinamici
+
+### Auto-sviluppo del bot
+- **bot_self_modify(instruction)** — modifica il codice del bot stesso (Claude Code sulla VM)
+- **bot_deploy()** — pubblica le modifiche in produzione
+- **REGOLA**: quando Francesco chiede di modificare/aggiungere qualcosa AL BOT (un comando, un comportamento, un fix), NON dire "fai /deploy": fai tu da solo `bot_self_modify(istruzione)` e SUBITO DOPO `bot_deploy()`. Poi conferma cosa hai sviluppato e che è live. Francesco scrive a parole, non usa comandi.
 - **read_file(path)** / **write_file(path, content)** / **list_directory(path)** — file locali
 
 ### Memoria
