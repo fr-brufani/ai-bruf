@@ -164,76 +164,8 @@ async def cmd_test_revolut(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_revolut_reminder(context)
 
 
-async def cmd_dev(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Inoltra un'istruzione a Claude Code sulla VM per modificare/migliorare il bot.
-    Uso: /dev <istruzione> (es. /dev aggiungi un comando che mostra la data di oggi)."""
-    if not is_authorized(update.effective_user.id):
-        return
-    instruction = " ".join(context.args).strip() if context.args else ""
-    if not instruction:
-        await update.message.reply_text(
-            "Uso: `/dev <istruzione>`\n\n"
-            "Esempio: `/dev leggi agent/tools.py e dimmi quanti tool ci sono`\n"
-            "Claude Code lavora sul repo del bot sulla VM. "
-            "Le modifiche vanno poi deployate per andare in produzione.",
-            parse_mode="Markdown",
-        )
-        return
-
-    bridge_url = os.environ.get("BRIDGE_URL", "")
-    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
-    if not bridge_url:
-        await update.message.reply_text("❌ BRIDGE_URL non configurato.")
-        return
-
-    await update.message.reply_text("🛠️ Claude Code al lavoro sulla VM... (può richiedere fino a 5 min)")
-    await update.effective_chat.send_action("typing")
-
-    def _call():
-        import requests
-        resp = requests.post(
-            f"{bridge_url}/dev",
-            json={"message": instruction, "secret": bridge_secret},
-            timeout=300,
-        )
-        resp.raise_for_status()
-        return resp.json().get("response", "(nessuna risposta)")
-
-    try:
-        result = await asyncio.to_thread(_call)
-        await _reply(update, result or "(risposta vuota)")
-    except Exception as e:
-        await update.message.reply_text(f"❌ Errore /dev: {e}")
-
-
-async def cmd_deploy(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Manda in produzione le modifiche fatte via /dev (build su Fly, poi live)."""
-    if not is_authorized(update.effective_user.id):
-        return
-    bridge_url = os.environ.get("BRIDGE_URL", "")
-    bridge_secret = os.environ.get("BRIDGE_SECRET", "")
-    if not bridge_url:
-        await update.message.reply_text("❌ BRIDGE_URL non configurato.")
-        return
-
-    await update.message.reply_text("🚀 Deploy in corso (build su Fly, ~2-4 min)...")
-    await update.effective_chat.send_action("typing")
-
-    def _call():
-        import requests
-        resp = requests.post(
-            f"{bridge_url}/deploy",
-            json={"secret": bridge_secret},
-            timeout=300,
-        )
-        resp.raise_for_status()
-        return resp.json().get("response", "(nessuna risposta)")
-
-    try:
-        result = await asyncio.to_thread(_call)
-        await _reply(update, result)
-    except Exception as e:
-        await update.message.reply_text(f"❌ Errore /deploy: {e}")
+# Nota: i comandi /dev e /deploy (che passavano dalla VM) sono stati rimossi.
+# Lo sviluppo e il deploy del bot ora si fanno dal Mac con Claude Code + flyctl.
 
 
 # ── Message handler ───────────────────────────────────────────────────────────
@@ -391,8 +323,6 @@ def main():
     app.add_handler(CommandHandler("test_recap", cmd_test_recap))
     app.add_handler(CommandHandler("test_briefing", cmd_test_briefing))
     app.add_handler(CommandHandler("test_revolut", cmd_test_revolut))
-    app.add_handler(CommandHandler("dev", cmd_dev))
-    app.add_handler(CommandHandler("deploy", cmd_deploy))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))

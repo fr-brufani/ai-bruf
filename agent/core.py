@@ -17,10 +17,6 @@ _messages: list = []
 # ── Routing keywords per workstation selettiva ────────────────────────────────
 # Ordine: più specifici prima per evitare false positive
 _WS_KEYWORDS = {
-    "dev":          ["modifica il bot", "aggiungi un comando", "aggiungi una funzione",
-                     "aggiungi un tool", "aggiungi la possibilità", "migliora il bot",
-                     "cambia il bot", "il bot deve", "fai in modo che tu", "voglio che tu possa",
-                     "crea un comando", "sviluppa", "modifica te stesso", "modifica il tuo codice"],
     "calls":        ["chiama", "telefona", "chiamata", "telefonata", "prenota per telefono",
                      "contatta telefonicamente", "fai una chiamata"],
     "diet":         ["cosa mangio", "mangio", "dieta", "colazione", "pranzo", "cena",
@@ -37,7 +33,7 @@ _WS_KEYWORDS = {
 }
 
 _ALL_WORKSTATIONS = ("email", "research", "calendar", "files", "applications",
-                     "finance", "wedding", "tasks", "diet", "calls", "dev")
+                     "finance", "wedding", "tasks", "diet", "calls")
 
 
 def _detect_workstation(message: str):
