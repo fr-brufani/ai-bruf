@@ -51,6 +51,20 @@ def browser_fill_application(
         how_did_you_hear: Come hai trovato il lavoro
         extra_fields: Istruzioni aggiuntive in linguaggio naturale per campi specifici
     """
+    return (
+        "Le candidature ora si compilano dal Mac con Claude Code (browser reale di Francesco, "
+        "CV già pronti, conferma prima di inviare). Digli di aprire la chat sul Mac e mandare lì "
+        f"il link dell'offerta. (URL ricevuto: {url})"
+    )
+
+
+def _browser_fill_application_via_bridge(
+    url: str,
+    cv_type: str = "sales",
+    how_did_you_hear: str = "LinkedIn - post or content",
+    extra_fields: str = "",
+) -> str:
+    """[DISATTIVATO] Versione che passava dalla VM/Browserbase. Tenuta come riferimento."""
     import os, requests
     bridge_url = os.environ.get("BRIDGE_URL", "")
     bridge_secret = os.environ.get("BRIDGE_SECRET", "")

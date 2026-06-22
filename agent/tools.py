@@ -27,13 +27,36 @@ def _bridge_post(endpoint: str, payload: dict, timeout: int) -> str:
 
 
 def search_web(query: str) -> str:
-    """Cerca sul web (DuckDuckGo) tramite la VM. Timeout protetto."""
-    return _bridge_post("/search", {"query": query}, timeout=45)
+    """Cerca sul web (DuckDuckGo). Gira nel bot stesso, senza VM."""
+    try:
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=6))
+        if not results:
+            return "Nessun risultato trovato."
+        parts = [f"**{r.get('title','')}**\n{r.get('body','')}\nURL: {r.get('href','')}" for r in results]
+        return "\n\n".join(parts)
+    except Exception as e:
+        return f"Errore nella ricerca: {e}"
 
 
 def browse_url(url: str) -> str:
-    """Apre un URL e restituisce il testo della pagina, tramite la VM. Timeout protetto."""
-    return _bridge_post("/fetch", {"url": url}, timeout=55)
+    """Apre un URL e restituisce il testo della pagina (fetch leggero, senza browser/VM)."""
+    import requests, re, html
+    try:
+        r = requests.get(url, timeout=20, headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        })
+        r.raise_for_status()
+        text = r.text
+        text = re.sub(r"(?is)<(script|style|noscript).*?</\1>", " ", text)
+        text = re.sub(r"(?s)<[^>]+>", " ", text)
+        text = html.unescape(re.sub(r"\s+", " ", text)).strip()
+        if len(text) > 8000:
+            text = text[:8000] + " … [troncato]"
+        return text or "(pagina vuota o non leggibile come testo)"
+    except Exception as e:
+        return f"Errore nel leggere la pagina: {e}. Per siti complessi usa Claude Code sul Mac."
 
 
 def write_memory(content: str) -> str:
@@ -416,7 +439,12 @@ def web_task(task: str) -> str:
     Args:
         task: Descrizione completa del task (es. "vai su esselunga.it e aggiungi al carrello: 500g petto di pollo, 1L latte")
     """
-    return _bridge_post("/browse", {"task": task}, timeout=880)
+    return (
+        "I task web complessi (spesa, navigazione di siti con login, compilare form) "
+        "ora si fanno dal Mac con Claude Code, non dal bot — è più affidabile e usa le "
+        "sessioni già loggate di Francesco. Digli di aprire la chat sul Mac e chiedere lì. "
+        f"(Task richiesto: {task[:120]})"
+    )
 
 
 # ── Auto-sviluppo del bot (Claude Code sulla VM) ──────────────────────────────
